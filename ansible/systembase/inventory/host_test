@@ -1,0 +1,2 @@
+[testgroup]
+hadoop.so.com ansible_ssh_port=22 ansible_user=test

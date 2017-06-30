@@ -1,0 +1,5 @@
+- hosts: testgroup
+  remote_user: test
+  environment:
+    JAVA_HOME: /usr/local/bin/jdk1.8
+    JRE_HOME:
