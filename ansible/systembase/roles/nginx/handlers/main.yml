@@ -1,4 +1,7 @@
 ---
+- name: check nginx config
+  shell: /home/test/nginx/sbin/nginx -t
+  
 - name: start nginx
   shell: /home/test/nginx/sbin/nginx
 
