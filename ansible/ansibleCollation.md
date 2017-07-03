@@ -2,9 +2,10 @@ Ansible 学习
 
 ansible 语法
 
-        被管理组、机器             模块              内容
-ansible <pattern_goes_here> -m <module_name> -a <arguments>
+ansible 命令格式：
 
+ansible <pattern_goes_here> -m <module_name> -a <arguments>
+（ansible    被管理组、机器             模块              内容）
 一、模块：
 
 1.command 模块 // 默认模块，用于在各个被管理几点运行指定的命令（不支持管道和变量）
