@@ -1,0 +1,15 @@
+---
+- name: install page
+  yum: name={{ item }} state=present
+  with_items:
+   - gcc
+   - zlib-devel
+   - pcre-devel
+   - openssl-devel
+
+- name: copy nginx
+  copy: src=nginx dest=/home/test/nginx owner=root group=root
+
+- name: copy lib
+  copy: src=lib dest=/usr/local/lib owner=root group=root
+

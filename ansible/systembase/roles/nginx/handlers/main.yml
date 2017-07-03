@@ -1,0 +1,6 @@
+---
+- name: start nginx
+  shell: /home/test/nginx/sbin/nginx
+
+- name: reload nginx
+  shell: /home/test/nginx/sbin/nginx -s reload

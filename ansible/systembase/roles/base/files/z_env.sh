@@ -8,10 +8,6 @@ HISTCONTROL=ignoredups
 HISTTIMEFORMAT='[%F %T] '
 TMOUT=43200
 
-#export PROMPT_COMMAND='{ msg=$(history 1 | { read x y; echo $y; });user=$(whoami); echo $(date "+%Y-%m-%d %H:%M:%S"):$user:`pwd`/:$msg ---- $(who am i); } >> $HOME/.`hostname`.`whoami`.history-timestamp'
-
-# echo -ne “\e]2;$(ifconfig | awk ‘/inet addr:/ && ! /inet addr:127\./ { sub (“addr:”, “”); print $2 }’ | sed -e :a -e ‘$!N;s/\n/\|/g;ta’):${PWD}\a”
-
 # User specific aliases and functions
 alias rm='rm -i'
 alias cp='cp -i'
