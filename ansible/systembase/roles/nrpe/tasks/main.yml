@@ -2,10 +2,16 @@
 # This will install nrpe
 
 - name: install nrpe
-  copy: src=nrpe dest=/usr/local/nrpe user=nrpnag group=nrpnag
+  copy: src=nrpe dest=/usr/local/nrpe
 
-- name: nrpe config
-  copy: src=etc.d dest=/usr/local/nrpe/etc.d user=nrpnag group=nrpnag
+- name: nrpe etc.d config
+  copy: src=etc.d dest=/usr/local/nrpe/etc.d
+
+- name: nrpe etc config
+  copy: src=nrpe.cfg dest=/usr/local/nrpe/etc
+
+- name: chown nrpe user
+  shell: chown naigos.nagios -R /usr/local/nrpe
 
 - name: stop nrpe
   shell: ps -ef|grep nrpe|grep -v grep|awk '{print $2}'|xargs kill -9

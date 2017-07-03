@@ -52,7 +52,7 @@
   shell: setenforce 0
   ignore_errors: True
 
-- name: configure selinux file
+- name: configure selinux files
   copy: src=selinux_config dest=/etc/selinux/config
 
 - name: stop iptables
