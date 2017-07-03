@@ -1,0 +1,89 @@
+---
+# This role contains common plays that will run on all nodes.
+# 1：通过远程执行shell 脚本完成puppet同步前的系统初始化（puppet+ansible）
+
+#- name: create the repository for init
+#  script: init.sh
+
+# 2：通过ansible 配置完成系统初始化
+- name: yum page
+  yum: name={{ item }} state=present
+  with_items:
+   - ntp
+   - dstat
+   - vim-common
+   - vim-enhanced
+   - vim-minimal
+   - telnet
+   - lsof
+   - wget
+   - gcc
+   - gcc-c++
+   - make
+   - cmake
+   - psmisc
+   - bzip2
+   - unzip
+   - lrzsz
+   - subversion
+   - sudo
+   - nethogs
+   - sysstat
+   - tree
+   - which
+   - nscd
+   - libpcap
+   - libpcap-devel
+   - usbutils
+   - bc
+   - bison
+   - bison-devel
+   - libaio
+   - libtool-ltdl-devel
+
+- name: start the ntp service
+  service: name=ntpd state=started enable=yes
+  tags: ntp
+
+- name: stop selinux
+#  command: getenforce
+#  register: sestatus
+#  changed_when: false
+  shell: setenforce 0
+  ignore_errors: True
+
+- name: configure selinux file
+  copy: src=selinux_config dest=/etc/selinux/config
+
+- name: stop iptables
+  service: name=iptables state=stopped enabled=no
+
+- name: sysctl.conf
+  copy: src=sysctl.conf dest=/etc/sysctl.conf
+
+- name: start sysctl
+  shell: sysctl -p
+  ignore_errors: True
+
+- name: limit.conf
+  copy: src=limits.conf dest=/etc/security/limit.conf
+
+- name: limit.d
+  copy: src=20-nproc.conf dest=/etc/security/limit.d/20-nproc.conf
+
+- name: env.sh
+  copy: src=z_env.sh dest=/etc/profile.d/z_env.sh
+
+- name: java.sh
+  copy: src=java.sh dest=/etc/profile.d/java.sh
+
+- name: source env
+  shell: source /etc/profile.d/env.sh
+
+- name: source java.env
+  shell: source /etc/profile.d/java.sh
+
+
+
+
+
