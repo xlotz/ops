@@ -46,22 +46,16 @@
   tags: ntp
 
 - name: stop selinux
-#  command: getenforce
-#  register: sestatus
-#  changed_when: false
   shell: setenforce 0
   ignore_errors: True
 
 - name: configure selinux files
   copy: src=selinux_config dest=/etc/selinux/config
 
-- name: stop iptables
-  service: name=iptables state=stopped enabled=no
-
 - name: sysctl.conf
   copy: src=sysctl.conf dest=/etc/sysctl.conf
 
-- name: start sysctl
+- name: sysctl -p
   shell: sysctl -p
   ignore_errors: True
 

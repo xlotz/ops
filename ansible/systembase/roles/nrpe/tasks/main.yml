@@ -12,9 +12,3 @@
 
 - name: chown nrpe user
   shell: chown naigos.nagios -R /usr/local/nrpe
-
-- name: stop nrpe
-  shell: ps -ef|grep nrpe|grep -v grep|awk '{print $2}'|xargs kill -9
-
-- name: start nrpe
-  shell: sudo -u nrpnap /usr/local/nrpe/bin/nrpe -c /usr/local/nrpe/etc/nrpe.cfg -d

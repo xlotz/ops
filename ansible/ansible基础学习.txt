@@ -43,7 +43,7 @@ test:x:505:505::/home/test:/sbin/nologin
 
 (删除用户)
 eg.
-# ansible hadoop.so.com -m user -a "name=test uid=505 state=absent"
+# ansible hadoop.so.com -m user -a "name=test uid=505 state=absent remove=yes" // remove=yes 删除家目录
 hadoop.so.com | SUCCESS => {
     "changed": true,
     "force": false,

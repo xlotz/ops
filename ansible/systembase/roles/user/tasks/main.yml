@@ -1,0 +1,46 @@
+---
+# create group
+- name: add group for vuser
+  group: name=vuser state=present
+- name: add group for admin
+  group: name=admin state=present
+- name: add group for app
+  group: name=app state=present
+
+# create user to vuser
+- name: add user to vuser
+  user: name={{ useritem }} state=present groups=vuser
+  with_items:
+   - test1
+   - test2
+
+# create user to admin
+- name: add user to admin
+  user: name={{ useritem }} state=present groups=admin
+  with_items:
+   - admin1
+   - admin2
+
+- name: copy key
+  copy: src={{ useritem }}_pub.key /home/{{ useritem }}/.ssh/authorized_keys
+  with_items:
+   - test1
+   - test2
+   - admin1
+   - admin2
+
+- name: chown user file
+  shell: chown {{ useritem }}.{{ useritem }} /home/{{ useritem }} -R
+  with_items:
+   - test1
+   - test2
+   - admin1
+   - admin2
+
+- name: app user
+  user: name=app state=present groups=app
+
+- name: chmod app
+  shell: chmod o+x app
+
+

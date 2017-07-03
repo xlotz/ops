@@ -1,0 +1,11 @@
+---
+- name: ssh config
+  copy: src=sshd_config dest=/ect/ssh/sshd_config
+
+- name: lineinfile file
+  lineinfile: dest=/etc/ssh/sshd_config regexp:'^AllowUsers' line:'AllowUsers {{ item }}'
+  with_items:
+   - test1
+   - test2
+   - admin1
+   - admin2
