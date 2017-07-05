@@ -1,0 +1,477 @@
+saltstack 整理
+
+saltstack 语法
+
+一、常用命令
+1、salt  // 在Master 上运行，执行salt的模块
+
+salt '<target>' <function> [arguments]
+
+target 执行salt命令的目标， 可以使用正则表达式
+function 方法，有module提供
+arguments function参数
+
+eg.
+#salt '*' cmd.run 'uname -r'
+
+
+2、salt-run  //在Master执行，执行runner
+
+salt-run [options] [runner.func]
+
+eg.
+salt-run manage.status // 查看所有minion状态
+salt-run manage.down // 查看所有没在线的minion
+salt-run manged.up // 查看所有在线的minion
+
+3、salt-key  //秘钥管理，通常在master端执行
+
+salt-key [options]
+
+salt-key -L  //查看所有的minion-key
+salt-key -a <key-name>  //接受某个minion-key
+salt-key -d <key-name>  //删除某个minion-key
+salt-key -A   // 接受所有的minion-key
+salt-key -D   // 删除所有的minion-key
+
+4、salt-call  // 在Minion 上执行 自己可执行的模块,不是通过master 下发的
+
+salt-call [options] <function> [arguments]
+
+salt-call test.ping  // 自己执行test.ping 命令
+salt-call cmd.run 'ifconfig'  // 自己执行cmd.run 函数
+
+5、salt-cp 分发文件到minion 上，不支持目录分发，通常在master 运行
+
+salt-cp [options] '<target>' SOURCE DEST
+
+salt-cp '*' test.txt /tmp/a.txt
+
+6、salt-master // master 运行
+
+salt-master [options]
+
+salt-master -d   // 后台运行master
+salt-master -l debug // 前台debug 输出
+
+7、salt-minion minion 运行命令
+
+salt-minion [options]
+
+salt-minion -d
+salt-minion -l debug
+
+8、salt-syndic syndic 是salt的代理
+
+二、普通用户执行salt
+1、salt ACL
+
+1.1 设置master 配置文件
+client_acl:
+monitor:
+- test*:
+- test.*
+dev:
+- service.*
+sa:
+- .*
+
+1.2 重启master
+
+1.3 目录和文件权限
+chmod +r /etc/salt/master
+chmod +x /var/run/salt
+chmod +x /var/cache/salt
+
+2、external_auth
+2.1 修改master配置文件
+external_auth:
+
+(使用token不必每次都输入密码)
+
+
+三、target  // 指定命令或模块
+1、globbing 默认
+salt '*' test.ping
+
+2、RE
+salt -E 'web-(so|co)' test.ping
+
+3、List
+salt -L '127.0.0.1, test' test.ping
+
+4、grains
+salt -G 'os:CentOS' test.ping
+
+eg.
+salt '*' grains.items   // 查看所有grain k/v
+salt '*' grains.ls      // 查看所有grain 项
+salt '*' grains.item num_cpus  // 查看某个grains 值
+
+四、pillar  // 指定一些信息到指定的minion，以sls来写，格式是key-value
+适用：
+1、比较敏感的数据，比如密码,key等
+2、特殊数据到指定到特定的minion
+3、动态的内容
+4、其他的数据
+
+1、示例
+salt '*' pillar.items 查看minion 的pillar信息
+salt '*' pillar.item <key>  只能开单到顶级
+salt '*' pillar.get <key>:<key>  可以去到更小粒度的
+
+2、编写
+2.1 指定pillar_roots 目录（/srv/pillar）
+2.2 编写文件
+#vim test1.sls
+name:'salt'
+ users:
+  hadoop: 1000
+
+readhad: 2000
+ubuntu: 2001
+
+2.3 top.sls 指定minion到pillar 数据文件
+#vim top.sls
+base:
+ "*":
+   - test1
+2.4 刷新
+salt "*" saltutil.refresh_pillar
+
+五、grains
+定义minion 的grains /etc/salt/minion 或者 /etc/salt/grains
+grain:(在minion 添加改行)
+ roles:
+  - webserver
+  - memcache
+ deloyment: datacenter4
+ cabinet: 13
+ cab_u: 14-15
+
+也可以在master编写grains的模块，同步到minion中
+/srv/salt/_grains
+#vim test1.py
+def hello():
+    agrain = {}
+    agrain['hello']='saltstack'
+    return agrain
+
+同步到minion
+salt '*' saltutil.sync_grains
+salt '*' saltutil.sync_all
+salt '*' state.highstate
+
+六、salt state
+用来描述系统，软件，服务，配置文件的状态，用于配置管理，默认使用yaml 格式，并使用jinja2模板
+（state, pillar, top file 会使用sls文件编写）
+
+eg.
+cat /srv/salt/apache.sls
+apache:      // state id, 全文件唯一，如果模块没有加-name,默认使用ID做-name
+ pkg:          // 模块
+  - installed   // 函数,是否部署，bool, F时会去下载安装
+ service:       // 模块,描述service状态的函数
+  - running     // 函数，表示运行
+  - require:    // 依赖,表示依赖关系
+   - pkg: apache    // 依赖ID为apache的pkg状态
+
+eg.
+#cat top.sls
+base:
+ '*':
+  - apache
+
+#cat ssh/init.sls
+openssh-client:
+ pkg.installed
+ /etc/ssh/sshd_config:
+ file.managed:
+  - user: root
+  - group: root
+  - mode: 644
+  - source: salt://ssh/ssh_config
+  - require:
+    - pkg: openssh-client
+
+#cat ssh/server.sls
+include:
+ - ssh
+
+openssh-server:
+ pkg.installed
+
+sshd:
+ service.running:
+  - require:
+  - pkg: openssh-client
+  - pkg: openssh-server
+  - file: /etc/ssh/banner
+  - file: /etc/ssh/sshd_config
+
+/etc/ssh/sshd_config:
+ file.managed:
+  - user: root
+  - group: root
+  - mode: 644
+  - source: salt://ssh/sshd_config
+  - require:
+    - pkg: openssh-server
+
+/etc/ssh/banner:
+ file:
+  - managed
+  - user: root
+  - group: root
+  - mode: 644
+  - source: salt://ssh/banner
+  - require:
+    - pkg: openssh-server
+
+
+七、state的执行顺序
+salt '*' state.show_highstate
+salt '*' state.show_lowstate
+
+salt 默认会设置order从10000开始，可以通过设置master配置文件参数state_auto_order: False 来关闭
+1、include 被inclde 的文件Order靠前，先执行
+2、手动定义order字段：
+apache:
+  pkg:
+   - installed
+   - order: 1
+   order 的数字越小越先执行，从1开始，-1最后执行
+
+八、依赖关系系统 requisite system
+require watch  指依赖
+require_in, watch_in 指被依赖
+
+1、不是所有的state 都支持watch, 比较常用的是service
+2、watch 定义的依赖条件发生变化时会执行动作，如重启service
+eg.
+/etc/httpd/httpd.conf
+file:
+ - managed
+ - source: salt://httpd/httpd.conf
+httpd:
+ pkg:
+  - installed
+ service:
+  - running
+  - requried:
+   - pkg: httpd
+  - watch:
+   - file:/etc/httpd/httpd.conf
+
+eg.
+/etc/httpd/httpd.conf:
+file:
+ - managed
+ - source: salt://httpd/httpd.conf
+ - watch_in:
+  - service: httpd
+ httpd:
+  pkg:
+   - installed
+  - require_in:
+   - service: httpd
+   service:
+    - running
+
+九、salt state 环境
+针对不同的场景配置不同的目录
+
+file_roots:
+base:
+  - /srv/salt/prod // 生产环境
+qa:
+  - /srv/salt/qa   // 测试环境
+
+/srv/salt/prod/top.sls 文件内容
+base:
+ 'web*prod*':
+  - hadoop.so.com
+qa:
+  'web*qa*':
+   - test.so.com
+
+cat /srv/pillar/webserver/prod.sls
+webser_role: prod
+
+cat /srv/salt/prod/webserver/foobarcom.sls 该文件被所有访问到
+{% if pillar.get('webserver_role', '') %}
+/var/www/foobarcom:
+ file.recurse:
+   - source: salt://webserver/src/foobarcom
+- env: {{ pillar['webserver_role'] }}
+- user: www
+- group: www
+- dir_mode: 755
+- file_mode: 644
+{% endif %}
+
+十、salt schedule
+salt中的crontab, 在minion上执行的函数是salt的可执行模块里的函数，在master上执行的是runner模块的函数
+
+eg. 每隔3小时30分35秒，master就会运行一个state.over这个runner
+cat /etc/salt/master
+schedule:
+ overstate: //ID
+  function: state.over // 对于master, function=runnging
+  seconds: 35  // 间隔s
+  minutes: 30
+  hours: 3
+
+eg. minion 的schedule
+1、修改minion配置文件，需要修改所有的minion配置文件
+schedule:
+ highstate:
+  function: state.highstate
+ seconds: 30
+ minutes: 5
+ hours: 1
+2、为minion 指定pillar
+/srv/pillar/schedule.sls
+schedule:
+ highstate:
+  function: state.highstate
+ seconds: 30
+ minutes: 5
+ hours: 1
+通过top file 指定minion
+/srv/pillar/top.sls
+base:
+*:
+ - schedule
+
+十一、YAML 语法
+1、缩进：2个空格，'；'，'-' 后面缩进一个空格
+2、数字解析成数字
+mode:0644 ----> mode:644
+改：
+mode:'0644'
+
+3、YAML 不允许双简写
+pkg.installed # 第一个简写
+user.present # 不支持
+
+4、下划线会被删除
+date: 2017_07_05 ---> date:20170705
+改：
+date:'2017_07_05'
+
+十二、salt 事件系统和反应系统event and reacte system
+捕捉事件
+salt '*' event.fire "{'data':'soma message'}" "tag"  // 前面必须是字符串包住的字典，后面是tag,如果你的minion在监听event，你会看到这条event的
+salt-call event.fire_master 'soma message' 'tag'  // 前面数据类型没有要求，后面是tag,去master那看看收到了没有
+
+十三、salt ssh
+不需要在客户端安装salt-minion ， 通过ssh协议完成
+eg.
+/etc/salt/roster
+test1:
+ host: 172.16.33.136
+ user: app
+ passwd: app
+ sudo: True
+ port: 22
+ timeout: 5
+test2:
+ host: 172.16.33.137
+ user: app
+ passwd: app
+ sudo: True
+ port: 22
+
+#salt-ssh '*' test.ping
+
+十四、returners
+默认所有minion返回的值都会发送给master端，returner就是让minion把返回值发送给其他地方，如redis,mysql
+建立自定义的returner
+
+十五、自定义模块
+mkdir /srv/salt/_modules
+vim test.py
+-*- coding: utf-8 -*-
+
+def __virtual__():
+    if __grains__.get("os_family", "unkown") == "RedHat":
+        return 'yum'
+    else:
+        return False
+def install(rpm):
+    cmd = 'yum -y install {}'.format(rpm)
+    ret = __salt__['cmd.run'](cmd)
+    return ret
+
+十六、自定义returnner
+/srv/salt/_returners/file.py
+def __virtual__():
+    return 'file'
+
+def returner(ret):
+    result_file='/tmp/returns.txt'
+    f = open(result_file, 'a+')
+    f.write(str(ret))
+    f.close()
+
+salt '*' saltutil.sync_all   // 同步模块
+salt '*' test.ping --return file // 测试
+
+十七、应用实例
+saltstack 远程触发文件备份回滚
+mkdir /srv/salt/_modules
+
+#!/usr/bin/env python
+# coding:utf-8
+import sys, string, shutil
+import os, tarfile
+import datetime, time
+
+tn=datetime.datetime.today()
+time_now=tn.strftime('%Y-%m-%d')
+data_bak='/data/databak'
+data_tmp='/data/databak/tmp/%s'% time_now
+com_f = '%s%s'%(data_bak, time_now)
+if not os.path.exists(com_f)
+    os.makedirs(com_f)
+
+def CpFile():
+     id = sys.argv[1]
+     dir = sys.argv[2]            #传入两个变量，任务自动生成的id与要替换的文件
+     filename = '%s/%s.tar' % (com_f, id)
+     mode = 'w:tar'
+     os.chdir(data_bak)
+     w_file=open("/tmp/tmp.list",'w')
+     w_file.write(id+" "+dir)              #记录每次备份的id与相对应的备份目录或文件的路径
+     w_file.close()
+     file = tarfile.open( filename, mode )
+     file.add( '/tmp/tmp.list' )
+     file.add( dir )
+     file.close()
+     return 'ok'       #测试过程，就先让返回ok吧，之后再做判断
+
+
+def RollBack():
+     id = sys.argv[1]        #想要回滚到的版本id
+     if not os.path.exists(data_tmp):
+          os.makedirs(data_tmp)
+     filename = '%s/%s.tar' % (com_f, id)
+     tar = tarfile.open("%s" % filename)
+     for b in tar:
+          tar.extract(b,path="%s" % data_tmp)
+     tar.close()
+     for line in open('%s/tmp/tmp.list' % data_tmp):
+          id = line.split(" ")[:1][0]
+          dir = line.split(" ")[1:][0]       #读取备份时的路径
+          backup_dir='%s/%s' % (data_tmp,dir)
+          os.system('\cp -rp %s %s' % (backup_dir,dir))
+          return 'ok'
+
+
+
+
+
+
+
+
