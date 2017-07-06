@@ -19,10 +19,32 @@ eg.
 
 salt-run [options] [runner.func]
 
+- name: 执行脚本和命令的名字
+- onlyif: 测试命令，如果执行命令返回为True,cmd.run的命令才会被执行
+- unless: 和onlyif 相反，为True不执行，为False执行
+- request:
+- cwd: 执行命令当前目录，默认/root
+- user: 执行命令用户，默认root
+- group: 执行命令组，默认root
+- shell: 执行命令的环境设置
+- env: 执行命令的环境设置
+- umask: 运行命令是的umask
+- output_loglevel: 执行命令输出日志的级别，为quiet时，不输出日志
+- timeout: 执行命令的超时时间
+
 eg.
 salt-run manage.status // 查看所有minion状态
 salt-run manage.down // 查看所有没在线的minion
 salt-run manged.up // 查看所有在线的minion
+
+cmd.run:
+  - name: tar xzf jdk.tar.gz -C /home/app
+  - onlyif: test -f jdk.tar.gz
+  - cwd: /tmp
+  - user: app
+  - group: app
+
+
 
 3、salt-key  //秘钥管理，通常在master端执行
 

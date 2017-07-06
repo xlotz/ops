@@ -4,9 +4,13 @@ admin:
     - shell: /bin/bash
     - home: /home/admin
     - uid: 500
+    - gid: 300
+    - password: '$1$Rz9mYVoV$47aviFN43h5/JJNl9FmSF1'
+    - require:
+      - group: app
 user1:
   user.present:
-    - udi: 501
+    - uid: 501
 user2:
   user.absent:
     - purge: True // 为True 删除用户家目录以及下面的文件（userdel -r）
