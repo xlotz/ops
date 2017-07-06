@@ -61,13 +61,13 @@ file_mode: 文件夹下文件权限
 # 新建目录
 /web/logstash:
   file.directory:
-     - user: web
-     - group: web
-     - file_mode: 644
-     - dir_mode: 755
-     - makedirs: True
-     - include_empty: True
-     - template: jinja
-       - backup: minion
+    - user: web
+    - group: web
+    - file_mode: 644
+    - dir_mode: 755
+    - makedirs: True
+    - include_empty: True
+    - template: jinja
+      - backup: minion
 
 
