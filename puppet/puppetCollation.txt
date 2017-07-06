@@ -1,0 +1,59 @@
+
+
+
+puppet 后期优化配置
+
+1、自签名配置
+/etc/puppet/autosign.conf
+*.example.com
+
+2、passenger 扩展puppet
+
+3、结合github去中心化
+3.1 客户端克隆一个puppet裸仓库
+git clone --bare ssh://git@repo.example.com/var/git/puppet
+
+3.2 检出罗仓库的内容到/etc/puppet目录
+git archive --format=tar HEAD|(cd /etc/puppet && tar xf -)
+
+3.3 执行site.pp
+puppet apply -v /etc/puppet/manifests/site.pp
+
+3.4 使用git的remote命令自动推送到客户端
+git remove add web ssh://git@web1.example.com/etc/puppet
+
+3.5 推送更新到任意一个客户端
+git push web
+
+3.6 客户端收到git的推送，更新自己的/etc/puppet目录。
+
+4、监控，报告，排错
+4.1 客户端在服务端生成报告
+puppet.conf
+report=true
+
+4.2 通过email发送特定标签的日志信息
+puppet.conf
+[master]
+reports = store,tagmail
+/etc/puppet/tagmail.conf
+all: test@example.com
+
+4.3、生成图形化报告
+yum install rrdtool librrd-ruby
+puppet.conf
+reports=store, rrdgraph
+
+4.4、自动生成html文档
+puppet doc --all --outputdir=/var/www/html/puppet --mode rdoc \
+ --manifestdir=/etc/puppet/manifests/
+4.5 检查配置
+puppet --genconfig
+
+4.6 使用不同环境 (默认的环境是 production)
+puppet.conf
+[development]
+manifest = /etc/puppet/env/development/manifests/site.pp
+modulepath = /etc/puppet/env/development/modules:/etc/puppet/modules
+
+
